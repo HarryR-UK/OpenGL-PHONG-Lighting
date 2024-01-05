@@ -532,11 +532,6 @@ int main(int argc, char* argv[])
     triangleShader.setVec3("light.diffuse",  vec3(0.75f, 0.75f, 0.75f)); // darken diffuse light a bit
     triangleShader.setVec3("light.specular", vec3(1.0f, 1.0f, 1.0f)); 
 
-    // FOR WHEN U GET BACK - SET THE PATHS FOR THE ABOVE SHADER
-    // THEN WRITE A SUBROUTINE FOR RENDERING THE LIGHT OBJECT
-    // THE WRITE MORE OF THE SHADER FOR THE MAIN CUBE AND ADD THE 
-    // LIGHTING SOURCES USING THE LEARNOPENGL COURSE
-
 
 
     
