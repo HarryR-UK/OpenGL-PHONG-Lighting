@@ -8,8 +8,8 @@ This project is quite unorganised in terms of code style but is not a representa
 
 # Showcase!
 
-![image of light]("Resources/Images/lightingImage.png")
+![image of light](./Resources/Images/lightingImage.png)
 
 >
 
-![video showcase]("Resources/Images/lightingtest.gif")
+![video showcase](./Resources/Images/lightingtest.gif)
