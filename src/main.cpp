@@ -300,6 +300,8 @@ int main(int argc, char* argv[])
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+    /*
+    
     int width, height, nrChannels;
     unsigned char* data = stbi_load("/Users/testTheOne/OpenGLProjects/test1/Resources/Images/container.jpg", &width, &height, &nrChannels, 0);
     if(data)
@@ -313,6 +315,7 @@ int main(int argc, char* argv[])
     // free the memory
     stbi_image_free(data);
 
+    */
     // awesome face
     unsigned int texture2;
     glGenTextures(1, &texture2);
@@ -326,6 +329,7 @@ int main(int argc, char* argv[])
 
     stbi_set_flip_vertically_on_load(true);
 
+/*
     unsigned char* data2 = stbi_load("/Users/testTheOne/OpenGLProjects/test1/Resources/Images/amoogus.png", &width, &height, &nrChannels, 0);
     if(data2)
     {
@@ -337,6 +341,7 @@ int main(int argc, char* argv[])
     }
 
     stbi_image_free(data2);
+*/
     stbi_set_flip_vertically_on_load(false);
 
     triangleShader.use();
@@ -512,8 +517,8 @@ int main(int argc, char* argv[])
     triangleShader.setVec3("viewPos", camera.position);
 
 
-    triangleShader.setVec3("material.ambient", vec3(0.8f, 0.3f, 0.11f));
-    triangleShader.setVec3("material.diffuse", vec3(1.0f, 0.5f, 0.31f));
+    triangleShader.setVec3("material.ambient", vec3(0, 0.26f, 0.26f));
+    triangleShader.setVec3("material.diffuse", vec3(0.0f, 1.0f, 1.0f));
     triangleShader.setVec3("material.specular", vec3(0.5f, 0.5f, 0.5f));
     triangleShader.setFloat("material.shininess", 32.0f);
 
