@@ -16,3 +16,5 @@ MakeFile
 *.o
 
 .cmake/
+
+.DS_Store
