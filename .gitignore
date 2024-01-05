@@ -1,0 +1,17 @@
+*.exe
+
+bin/ 
+
+.vscode/
+
+CMakeFiles/
+
+compile_commands.json
+
+compile-run.sh
+
+MakeFile
+
+*.obj
+*.o
+
