@@ -37,6 +37,7 @@ float initialCameraPosY = 0.5f;
 
 Camera camera(vec3(0.0f, initialCameraPosY, -3.0f));
 
+bool isPaused = false;
 
 void processInput(GLFWwindow* window, float& deltaTime)
 {
@@ -49,6 +50,11 @@ void processInput(GLFWwindow* window, float& deltaTime)
             mouseActive = !mouseActive;
 
         }
+    }
+    else if(glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
+    {
+        keyPressed = true;
+        isPaused = !isPaused;
     }
     else{
         keyPressed = false;
@@ -543,50 +549,52 @@ int main(int argc, char* argv[])
 
     while(!glfwWindowShouldClose(window))
     {
-
             float currentFrame = glfwGetTime();
             deltaTime = calculateDeltaTime(lastFrame, currentFrame);
-
             processInput(window, deltaTime);
 
-            // UPDATE
-                //model = glm::mat4(1.0f);
-                //model = glm::rotate(model, glm::radians(-55.0f), vec3(1.0f, 0.0f, 0.0f));
-                //model = glm::rotate(model, glm::radians((float) glfwGetTime()) * deltaTime, vec3(0.0f, 1.0f, 0.0f));
-                //model = glm::rotate(model, glm::radians((float) glfwGetTime()) * deltaTime * 0.5f, vec3(1.0f, 0.0f, 0.0f));
+            proj = glm::perspective(glm::radians(camera.fov), (float) WINDOW_WIDTH / (float) WINDOW_HEIGHT, 0.1f, 100.0f);
+            view = camera.getViewMatrix();               
 
-                const float radius = 5.f;
-                lightModel = mat4(1.0f);
-                lightPosition = vec3(sin(glfwGetTime()) * radius, sin(glfwGetTime()) * 5.0f, cos(glfwGetTime()) * radius);
-                lightModel = glm::translate(model, lightPosition);
-                
+            lightShader.use();
+            lightShader.setMat4("u_projection", proj);
+            lightShader.setMat4("u_view", view);
+            lightShader.setMat4("u_model", lightModel);
+            lightShader.setVec3("u_lightColor", lightColor);
+            
+            triangleShader.use();
+            triangleShader.setMat4("model", model);
+            triangleShader.setMat4("view", view);
+            triangleShader.setMat4("proj", proj);    
 
-                proj = glm::perspective(glm::radians(camera.fov), (float) WINDOW_WIDTH / (float) WINDOW_HEIGHT, 0.1f, 100.0f);
-                view = camera.getViewMatrix();               
+            triangleShader.setVec3("objectColor", objectColor);
+            triangleShader.setVec3("lightColor", lightColor);
 
-
-                lightShader.use();
-                lightShader.setMat4("u_projection", proj);
-                lightShader.setMat4("u_view", view);
-                lightShader.setMat4("u_model", lightModel);
-                lightShader.setVec3("u_lightColor", lightColor);
-                
-                triangleShader.use();
-                triangleShader.setMat4("model", model);
-                triangleShader.setMat4("view", view);
-                triangleShader.setMat4("proj", proj);    
-
-                triangleShader.setVec3("objectColor", objectColor);
-                triangleShader.setVec3("lightColor", lightColor);
-
-                triangleShader.setVec3("lightPosition", lightPosition);
-                triangleShader.setVec3("viewPos", camera.position);
+            triangleShader.setVec3("lightPosition", lightPosition);
+            triangleShader.setVec3("viewPos", camera.position);
+            if(!isPaused)
+            {
 
 
+                // UPDATE
+                    //model = glm::mat4(1.0f);
+                    //model = glm::rotate(model, glm::radians(-55.0f), vec3(1.0f, 0.0f, 0.0f));
+                    //model = glm::rotate(model, glm::radians((float) glfwGetTime()) * deltaTime, vec3(0.0f, 1.0f, 0.0f));
+                    //model = glm::rotate(model, glm::radians((float) glfwGetTime()) * deltaTime * 0.5f, vec3(1.0f, 0.0f, 0.0f));
 
-            // END
+                    const float radius = 5.f;
+                    //lightModel = mat4(1.0f);
+                    lightPosition = vec3(sin(glfwGetTime()) * radius, sin(glfwGetTime()) * 5.0f, cos(glfwGetTime()) * radius);
+                    lightModel = glm::translate(model, lightPosition);
+                    
 
 
+
+
+                // END
+
+
+            }
             glClearColor(0.19f, 0.16f, 0.74f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -597,6 +605,7 @@ int main(int argc, char* argv[])
             glfwSwapBuffers(window);
 
             glfwPollEvents();
+
     }
 
 
