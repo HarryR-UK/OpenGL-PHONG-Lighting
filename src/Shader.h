@@ -46,6 +46,8 @@ class Shader
 
         void setVec3(const std::string& name, glm::vec3 value) const;
         void setVec2(const std::string& name, glm::vec2 value) const;
+        
+        static void unbind();
 
 };
 

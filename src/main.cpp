@@ -8,14 +8,17 @@
 #include<glm/gtc/matrix_transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
 
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw_gl3.h"
+
 #include "Shader.h"
 #include "Camera.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-#define WINDOW_WIDTH 1500
-#define WINDOW_HEIGHT 1000
+#define WINDOW_WIDTH 1800
+#define WINDOW_HEIGHT 1080
 
 typedef glm::vec4 vec4;
 typedef glm::vec3 vec3;
@@ -50,11 +53,6 @@ void processInput(GLFWwindow* window, float& deltaTime)
             mouseActive = !mouseActive;
 
         }
-    }
-    else if(glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
-    {
-        keyPressed = true;
-        isPaused = !isPaused;
     }
     else{
         keyPressed = false;
@@ -133,7 +131,8 @@ void mouseCallBack(GLFWwindow* window, double xPosition, double yPosition)
     lastXPosition = xPosition;
     lastYPosition = yPosition;
 
-    camera.processMouseMovement(xOffset, yOffset);
+    if(!mouseActive)
+        camera.processMouseMovement(xOffset, yOffset);
 
     // next we add the offset values to the globally declared pitch and yaw values
 
@@ -152,7 +151,7 @@ void renderLight(Shader& lightShader, unsigned int& lightVAO, unsigned int& ligh
 
 int main(int argc, char* argv[])
 {
-    GLFWwindow* window;
+
 
     if(!glfwInit())
         return -1;
@@ -162,6 +161,8 @@ int main(int argc, char* argv[])
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_SAMPLES, 3);
+    glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
+
 
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
@@ -171,8 +172,16 @@ int main(int argc, char* argv[])
 
     // captures and maintains the mouse cursorc:w
 
+    GLFWwindow* window;
+    float SCR_WIDTH = glfwGetVideoMode(glfwGetPrimaryMonitor())->width;
+    float SCR_HEIGHT = glfwGetVideoMode(glfwGetPrimaryMonitor())->height;
 
-    window = glfwCreateWindow(WINDOW_WIDTH,WINDOW_HEIGHT, "OpenGL", NULL, NULL);
+    SCR_WIDTH = WINDOW_WIDTH;
+    SCR_HEIGHT = WINDOW_HEIGHT;
+
+    window = glfwCreateWindow(SCR_WIDTH,
+    SCR_HEIGHT, "OpenGL", NULL,
+     NULL);
 
 
 
@@ -191,16 +200,27 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+    glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_ALPHA_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC0_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_PROGRAM_POINT_SIZE);
+
+    //glfwSwapInterval(1);
 
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     // sets the function associated with each callback of the mouse movement
     glfwSetCursorPosCallback(window, mouseCallBack);
+
+    //IMGUI
+    ImGui::CreateContext();
+    ImGui_ImplGlfwGL3_Init(window, true);
+    ImGui::StyleColorsDark();
+
     
     // vertices data opengl buffers
 
@@ -360,7 +380,7 @@ int main(int argc, char* argv[])
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glUseProgram(0);
+    Shader::unbind();
 
 
     
@@ -371,22 +391,20 @@ int main(int argc, char* argv[])
 
 
 
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glUseProgram(0);
-
     // !FLOOR
 
     // transformations
     //identity matrix
 
 
-    mat4 model = mat4(1.0f);
+    mat4 triangleModel = mat4(1.0f);
+    triangleModel = glm::scale(triangleModel, vec3(5.0f, 0.3f, 5.0f));
     //model = glm::rotate(model, glm::radians(-55.0f), vec3(1.0f, 0.0f, 0.0f));
+    //model = glm::scale(model, vec3(3.0f, 0.5f, 3.0f));
+    //model = glm::rotate(model, glm::radians(20.0f), vec3(0.0f, 1.0f, 0.0f));
 
     mat4 proj = mat4(1.0f);
-    proj = glm::perspective(glm::radians(camera.fov), (float) WINDOW_WIDTH / (float) WINDOW_HEIGHT, 0.1f, 100.0f);
+    proj = glm::perspective(glm::radians(camera.fov), (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
     //proj = glm::ortho(0.0f, (float) WINDOW_WIDTH, 0.0f, (float) WINDOW_HEIGHT, 0.1f, 100.0f);
     
     // Camera
@@ -415,7 +433,7 @@ int main(int argc, char* argv[])
     float lastFrame = 0.0f;
 
     triangleShader.use();
-    triangleShader.setMat4("model", model);
+    triangleShader.setMat4("model", triangleModel);
     triangleShader.setMat4("view", view);
     triangleShader.setMat4("proj", proj);
 
@@ -426,7 +444,7 @@ int main(int argc, char* argv[])
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glUseProgram(0);
+    Shader::unbind();
 
     // LIGHTING
 
@@ -497,17 +515,50 @@ int main(int argc, char* argv[])
     // but will still refect a large portion of the Red  green and vlue
     // this reflects how lighting works in real life, the object will reflect certain colors of what it is
     // but will absorb a large proportion of other colors which it does not reflect
+    Shader lightShader("./Shaders/MainLight.vert", "./Shaders/MainLight.frag");
+    struct Light {
+        vec3 position;
+
+        vec3 ambient;
+        vec3 diffuse;
+        vec3 specular;
+
+        float constant;
+        float linear;
+        float quadratic;
+    };
+
+    struct Material{
+        vec3 ambient;
+        vec3 diffuse;
+        vec3 specular;
+        float shininess;
+    };
+
+    Light light;
+
+    light.ambient = vec3(0.4f, 0.4f, 0.4f);
+    light.diffuse = vec3(0.75f, 0.75f, 0.75f);
+    light.specular = vec3(1.0f);
+    light.constant = 1.0f;
+    light.linear = 0.09f;
+    light.quadratic = 0.032f;
+
+
+    Material material;
+    material.ambient =vec3(0, 0.26f, 0.26f);
+    material.diffuse = vec3(0.0f, 1.0f, 1.0f);
+    material.specular = vec3(0.5f, 0.5f, 0.5f);
+    material.shininess = 32.0f;
 
     mat4 lightModel = mat4(1.0f);
     lightModel = glm::scale(lightModel, vec3(0.2f,0.2f,0.2f));
 
-    vec3 lightPosition = vec3(7.0f, 0.0f, 0.0f);
-    lightModel = glm::translate(lightModel, lightPosition);
-
-    Shader lightShader("./Shaders/MainLight.vert", "./Shaders/MainLight.frag");
+    light.position = vec3(2.0f, 2.0f, 0.0f);
+    lightModel = glm::translate(lightModel, light.position);
 
 
-    vec3 lightColor = vec3(1.0, 1.0, 1.0);
+
     vec3 objectColor = vec3(0.12, 0.87, 0.97);
 
     lightShader.use();
@@ -516,21 +567,22 @@ int main(int argc, char* argv[])
     lightShader.setMat4("u_model", lightModel);
 
     triangleShader.use();
-    triangleShader.setVec3("objectColor", objectColor);
-    triangleShader.setVec3("lightColor", lightColor);
 
-    triangleShader.setVec3("lightPosition", lightPosition);
+
     triangleShader.setVec3("viewPos", camera.position);
 
+    triangleShader.setVec3("material.ambient", material.ambient);
+    triangleShader.setVec3("material.diffuse", material.diffuse);
+    triangleShader.setVec3("material.specular", material.specular);
+    triangleShader.setFloat("material.shininess", material.shininess);
 
-    triangleShader.setVec3("material.ambient", vec3(0, 0.26f, 0.26f));
-    triangleShader.setVec3("material.diffuse", vec3(0.0f, 1.0f, 1.0f));
-    triangleShader.setVec3("material.specular", vec3(0.5f, 0.5f, 0.5f));
-    triangleShader.setFloat("material.shininess", 32.0f);
-
-    triangleShader.setVec3("light.ambient",  vec3(0.4f, 0.4f, 0.4f));
-    triangleShader.setVec3("light.diffuse",  vec3(0.75f, 0.75f, 0.75f)); // darken diffuse light a bit
-    triangleShader.setVec3("light.specular", vec3(1.0f, 1.0f, 1.0f)); 
+    triangleShader.setVec3("light.position", light.position);
+    triangleShader.setVec3("light.ambient",  light.ambient);
+    triangleShader.setVec3("light.diffuse",  light.diffuse); // darken diffuse light a bit
+    triangleShader.setVec3("light.specular", light.specular); 
+    triangleShader.setFloat("light.constant", light.constant);
+    triangleShader.setFloat("light.linear", light.linear);
+    triangleShader.setFloat("light.quadratic", light.quadratic);
 
 
 
@@ -540,62 +592,140 @@ int main(int argc, char* argv[])
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    glUseProgram(0);
+    Shader::unbind();
+
+
+    ImVec4 clearColor = ImVec4(0.25f, 0.25f, 0.25f, 1.0f);
 
     while(!glfwWindowShouldClose(window))
     {
+
+            glClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+            ImGui_ImplGlfwGL3_NewFrame();
+
+
             float currentFrame = glfwGetTime();
             deltaTime = calculateDeltaTime(lastFrame, currentFrame);
             processInput(window, deltaTime);
 
-            proj = glm::perspective(glm::radians(camera.fov), (float) WINDOW_WIDTH / (float) WINDOW_HEIGHT, 0.1f, 100.0f);
+            proj = glm::perspective(glm::radians(camera.fov), (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
             view = camera.getViewMatrix();               
+
+            //model = glm::rotate(model, glm::radians(10.0f) * deltaTime, vec3(0.0f, 1.0f, 0.0f));
+            // UPDATE
+                //model = glm::mat4(1.0f);
+                //model = glm::rotate(model, glm::radians(-55.0f), vec3(1.0f, 0.0f, 0.0f));
+                //model = glm::rotate(model, glm::radians((float) glfwGetTime()) * deltaTime, vec3(0.0f, 1.0f, 0.0f));
+                //model = glm::rotate(model, glm::radians((float) glfwGetTime()) * deltaTime * 0.5f, vec3(1.0f, 0.0f, 0.0f));
+
+                const float radius = 5.f;
+                lightModel = mat4(1.0f);
+                //lightPosition = vec3(sin(glfwGetTime()) * radius, sin(glfwGetTime()) * 5.0f, cos(glfwGetTime()) * radius);
+                lightModel = glm::translate(lightModel, light.position);
+                
+
+
+
+
+            // END
+
+            triangleShader.use();
+            triangleShader.setMat4("model", triangleModel);
+            triangleShader.setMat4("view", view);
+            triangleShader.setMat4("proj", proj);    
+            triangleShader.setVec3("viewPos", camera.position);
+
+            triangleShader.setVec3("material.ambient", material.ambient);
+            triangleShader.setVec3("material.diffuse", material.diffuse);
+            triangleShader.setVec3("material.specular", material.specular);
+            triangleShader.setFloat("material.shininess", material.shininess);
+
+            triangleShader.setVec3("light.position", light.position);
+            triangleShader.setVec3("light.ambient",  light.ambient);
+            triangleShader.setVec3("light.diffuse",  light.diffuse); // darken diffuse light a bit
+            triangleShader.setVec3("light.specular", light.specular); 
+            triangleShader.setFloat("light.constant", light.constant);
+            triangleShader.setFloat("light.linear", light.linear);
+            triangleShader.setFloat("light.quadratic", light.quadratic);
+
 
             lightShader.use();
             lightShader.setMat4("u_projection", proj);
             lightShader.setMat4("u_view", view);
             lightShader.setMat4("u_model", lightModel);
-            lightShader.setVec3("u_lightColor", lightColor);
-            
-            triangleShader.use();
-            triangleShader.setMat4("model", model);
-            triangleShader.setMat4("view", view);
-            triangleShader.setMat4("proj", proj);    
-
-            triangleShader.setVec3("objectColor", objectColor);
-            triangleShader.setVec3("lightColor", lightColor);
-
-            triangleShader.setVec3("lightPosition", lightPosition);
-            triangleShader.setVec3("viewPos", camera.position);
-            if(!isPaused)
-            {
-
-
-                // UPDATE
-                    //model = glm::mat4(1.0f);
-                    //model = glm::rotate(model, glm::radians(-55.0f), vec3(1.0f, 0.0f, 0.0f));
-                    //model = glm::rotate(model, glm::radians((float) glfwGetTime()) * deltaTime, vec3(0.0f, 1.0f, 0.0f));
-                    //model = glm::rotate(model, glm::radians((float) glfwGetTime()) * deltaTime * 0.5f, vec3(1.0f, 0.0f, 0.0f));
-
-                    const float radius = 5.f;
-                    //lightModel = mat4(1.0f);
-                    lightPosition = vec3(sin(glfwGetTime()) * radius, sin(glfwGetTime()) * 5.0f, cos(glfwGetTime()) * radius);
-                    lightModel = glm::translate(model, lightPosition);
-                    
+            lightShader.setVec3("u_lightColor", light.diffuse);
 
 
 
 
-                // END
-
-
-            }
-            glClearColor(0.19f, 0.16f, 0.74f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             renderTriangle(triangleShader, VAO, VBO, EBO, texture1, texture2);
 
             renderLight(lightShader, lightVAO, lightVBO);
+
+            // IMGUI RENDERING
+            {
+                ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+                static float f = 0.0f;
+                static int counter = 0;
+                ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+                ImGui::ColorEdit4("Clear Color: ", (float*)&clearColor);
+
+
+
+            }
+
+            {
+                ImGui::Begin("Light Properties");
+
+                ImGui::Text("Light");
+                ImGui::SliderFloat3("Position", (float*)&light.position, -10.0f, 10.f);
+                ImGui::ColorEdit3("Ambient", (float*)&light.ambient);
+                ImGui::ColorEdit3("Diffuse", (float*)&light.diffuse);
+                ImGui::ColorEdit3("Specular", (float*)&light.specular);
+                ImGui::SliderFloat("Constant", (float*)&light.constant, 0.f, 10.f);
+                ImGui::SliderFloat("Linear", (float*)&light.linear, 0.f, 1.f);
+                ImGui::SliderFloat("Quadratic", (float*)&light.quadratic, 0.f, 1.f);
+
+                ImGui::End();
+            }
+
+            {
+                ImGui::Begin("Material");
+
+                ImGui::Text(
+                    "Material"
+                );
+
+                ImGui::ColorEdit3(
+                    "Ambient", 
+                    (float*)&material.ambient
+                );
+
+                ImGui::ColorEdit3(
+                    "Diffuse", 
+                    (float*)&material.diffuse
+                );
+
+                ImGui::ColorEdit3(
+                    "Specular",
+                    (float*)&material.specular
+                );
+
+                ImGui::SliderFloat(
+                    "Shininess",
+                    (float*)&material.shininess,
+                    0.f,
+                    100.f
+                );
+
+
+                ImGui::End();
+            }
+
+            ImGui::Render();
+            ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
             
             glfwSwapBuffers(window);
 
@@ -603,7 +733,16 @@ int main(int argc, char* argv[])
 
     }
 
+    glDeleteBuffers(1,&VAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
 
+    glDeleteBuffers(1, &lightVAO);
+    glDeleteBuffers(1, &lightVBO);
+
+    ImGui_ImplGlfwGL3_Shutdown();
+    ImGui::DestroyContext();
+    glfwDestroyWindow(window);
     glfwTerminate();
 
 

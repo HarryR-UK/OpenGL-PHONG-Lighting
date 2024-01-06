@@ -170,3 +170,8 @@ void Shader::setVec2(const std::string& name, glm::vec2 value) const
 {
     glUniform2fv(glGetUniformLocation(ID, name.c_str()), 1, glm::value_ptr(value));
 }
+
+void Shader::unbind()
+{
+    glUseProgram(0);
+}

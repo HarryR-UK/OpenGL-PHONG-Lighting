@@ -9,10 +9,7 @@ in vec3 FragPos;
 uniform sampler2D texture1;
 uniform sampler2D texture2;
 
-uniform vec3 objectColor;
-uniform vec3 lightColor;
-
-uniform vec3 lightPosition;
+//uniform vec3 lightPosition;
 
 uniform vec3 viewPos;
 
@@ -31,7 +28,12 @@ struct Light
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
+
+    float constant;
+    float linear;
+    float quadratic;
 };
+
 
 uniform Material material;
 uniform Light light;
@@ -53,7 +55,7 @@ void main()
     // the magnitide, and only the angle. This means
     // we try to keep all vectors as unit vectors
     vec3 norm = normalize(Normal);
-    vec3 lightDir = normalize(lightPosition - FragPos);
+    vec3 lightDir = normalize(light.position - FragPos);
     
     // nect we calculate the diffuse impact of the light
     // on the current fragment by taking the dot product
@@ -72,6 +74,15 @@ void main()
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
     vec3 specular = (material.specular * spec) * light.specular;  
 
+
+    // point light specific
+    float distance = length(light.position - FragPos);
+    float attenuation = 1.0 / (light.constant + light.linear * distance + 
+    light.quadratic * (distance * distance));
+
+    ambient *= attenuation;
+    diffuse *= attenuation;
+    specular *= attenuation;
 
     vec3 result = ambient + diffuse + specular;
 
