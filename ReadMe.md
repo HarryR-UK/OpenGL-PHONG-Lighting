@@ -8,7 +8,12 @@ This project is quite unorganised in terms of code style but is not a representa
 
 # Showcase!
 
+
 ![image of light](./Resources/Images/lightingImage.png)
+
+>
+
+![image of lighting update](./Resources/Images/udpatedLighting.png)
 
 >
 

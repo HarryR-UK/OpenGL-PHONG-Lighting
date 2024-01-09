@@ -701,6 +701,7 @@ int main(int argc, char* argv[])
                 triangleUp = glm::normalize(glm::cross(triangleRight, triangleFront));
 
                 triangleModel = glm::translate(triangleModel, trianglePosition);
+                triangleModel = glm::scale(triangleModel, triangleScale);
                 //triangleModel = glm::scale(triangleModel, triangleFront * triangleScale.z);
                 //triangleModel = glm::scale(triangleModel, triangleRight * triangleScale.x);
                 //triangleModel = glm::scale(triangleModel, triangleUp * triangleScale.y);
@@ -764,7 +765,7 @@ int main(int argc, char* argv[])
 
             renderLight(lightShader, lightVAO, lightVBO);
 
-            renderDebugLines(debugShader, upVAO, upVBO);
+            //renderDebugLines(debugShader, upVAO, upVBO);
 
             // IMGUI RENDERING
             {
