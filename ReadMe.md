@@ -13,7 +13,7 @@ This project is quite unorganised in terms of code style but is not a representa
 
 >
 
-![image of lighting update](./Resources/Images/udpatedLighting.png)
+![image of lighting update](./Resources/Images/updatedLighting.png)
 
 >
 
