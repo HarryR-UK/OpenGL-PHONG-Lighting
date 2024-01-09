@@ -18,7 +18,7 @@
 #include "stb_image.h"
 
 #define WINDOW_WIDTH 1800
-#define WINDOW_HEIGHT 1080
+#define WINDOW_HEIGHT 1050
 
 typedef glm::vec4 vec4;
 typedef glm::vec3 vec3;
@@ -149,6 +149,15 @@ void renderLight(Shader& lightShader, unsigned int& lightVAO, unsigned int& ligh
     glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
+void renderDebugLines(Shader& shader, unsigned int& vao, unsigned int& vbo)
+{
+    shader.use();
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+    glDrawArrays(GL_LINES, 0, 2);
+}
+
 int main(int argc, char* argv[])
 {
 
@@ -208,6 +217,8 @@ int main(int argc, char* argv[])
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC0_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_PROGRAM_POINT_SIZE);
+    glEnable(GL_LINE_SMOOTH);
+    glLineWidth(5.0f);
 
     //glfwSwapInterval(1);
 
@@ -287,7 +298,7 @@ int main(int argc, char* argv[])
     glBindBuffer(GL_ARRAY_BUFFER,VBO);
 
     // This sends the data from the CPU to thr GPU
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
 
     // laying out the vertex data for the GPU
 
@@ -398,7 +409,20 @@ int main(int argc, char* argv[])
 
 
     mat4 triangleModel = mat4(1.0f);
-    triangleModel = glm::scale(triangleModel, vec3(5.0f, 0.3f, 5.0f));
+
+    vec3 triangleScale = vec3(1.0f);
+    vec3 trianglePosition = vec3(0.f);
+    vec3 triangleRotation = vec3(0.0f);
+
+    vec3 worldFront = vec3(0.0f, 0.0f, -1.0f);
+    vec3 worldUp = vec3(0.0f, 1.0f, 0.0f);
+    vec3 worldRight = vec3(1.0f, 0.0f, 0.0f);
+
+    vec3 triangleUp = worldUp;
+    vec3 triangleFront = worldFront;
+    vec3 triangleRight = worldRight;
+    
+    //triangleModel = glm::scale(triangleModel, triangleScale);
     //model = glm::rotate(model, glm::radians(-55.0f), vec3(1.0f, 0.0f, 0.0f));
     //model = glm::scale(model, vec3(3.0f, 0.5f, 3.0f));
     //model = glm::rotate(model, glm::radians(20.0f), vec3(0.0f, 1.0f, 0.0f));
@@ -502,7 +526,7 @@ int main(int argc, char* argv[])
 
     glGenBuffers(1, &lightVBO);
     glBindBuffer(GL_ARRAY_BUFFER, lightVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(lightVertices), lightVertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(lightVertices), lightVertices, GL_DYNAMIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) 0);
     glEnableVertexAttribArray(0);
@@ -516,7 +540,7 @@ int main(int argc, char* argv[])
     // this reflects how lighting works in real life, the object will reflect certain colors of what it is
     // but will absorb a large proportion of other colors which it does not reflect
     Shader lightShader("./Shaders/MainLight.vert", "./Shaders/MainLight.frag");
-    struct Light {
+    struct PointLight {
         vec3 position;
 
         vec3 ambient;
@@ -528,6 +552,15 @@ int main(int argc, char* argv[])
         float quadratic;
     };
 
+    struct DirectionalLight
+    {
+        vec3 direction;
+
+        vec3 ambient;
+        vec3 diffuse;
+        vec3 specular;
+    };
+
     struct Material{
         vec3 ambient;
         vec3 diffuse;
@@ -535,14 +568,14 @@ int main(int argc, char* argv[])
         float shininess;
     };
 
-    Light light;
+    PointLight pointLight;
 
-    light.ambient = vec3(0.4f, 0.4f, 0.4f);
-    light.diffuse = vec3(0.75f, 0.75f, 0.75f);
-    light.specular = vec3(1.0f);
-    light.constant = 1.0f;
-    light.linear = 0.09f;
-    light.quadratic = 0.032f;
+    pointLight.ambient = vec3(0.4f, 0.4f, 0.4f);
+    pointLight.diffuse = vec3(0.75f, 0.75f, 0.75f);
+    pointLight.specular = vec3(1.0f);
+    pointLight.constant = 1.0f;
+    pointLight.linear = 0.09f;
+    pointLight.quadratic = 0.032f;
 
 
     Material material;
@@ -551,15 +584,20 @@ int main(int argc, char* argv[])
     material.specular = vec3(0.5f, 0.5f, 0.5f);
     material.shininess = 32.0f;
 
+    DirectionalLight directionalLight;
+    directionalLight.direction = vec3(-0.2f, -1.0f, -0.3f);
+    directionalLight.ambient = vec3(0.2f, 0.2f, 0.2f);
+    directionalLight.diffuse = vec3(1.f, 0.93f, 0.83f);
+    directionalLight.specular = vec3(0.5f, 0.5f, 0.5f);
+
     mat4 lightModel = mat4(1.0f);
     lightModel = glm::scale(lightModel, vec3(0.2f,0.2f,0.2f));
 
-    light.position = vec3(2.0f, 2.0f, 0.0f);
-    lightModel = glm::translate(lightModel, light.position);
+    pointLight.position = vec3(2.0f, 2.0f, 0.0f);
+    lightModel = glm::translate(lightModel, pointLight.position);
 
 
 
-    vec3 objectColor = vec3(0.12, 0.87, 0.97);
 
     lightShader.use();
     lightShader.setMat4("u_projection", proj);
@@ -576,16 +614,44 @@ int main(int argc, char* argv[])
     triangleShader.setVec3("material.specular", material.specular);
     triangleShader.setFloat("material.shininess", material.shininess);
 
-    triangleShader.setVec3("light.position", light.position);
-    triangleShader.setVec3("light.ambient",  light.ambient);
-    triangleShader.setVec3("light.diffuse",  light.diffuse); // darken diffuse light a bit
-    triangleShader.setVec3("light.specular", light.specular); 
-    triangleShader.setFloat("light.constant", light.constant);
-    triangleShader.setFloat("light.linear", light.linear);
-    triangleShader.setFloat("light.quadratic", light.quadratic);
+    triangleShader.setVec3("pointLight[0].position", pointLight.position);
+    triangleShader.setVec3("pointLight[0].ambient",  pointLight.ambient);
+    triangleShader.setVec3("pointLight[0].diffuse",  pointLight.diffuse); // darken diffuse light a bit
+    triangleShader.setVec3("pointLight[0].specular", pointLight.specular); 
+    triangleShader.setFloat("pointLight[0].constant", pointLight.constant);
+    triangleShader.setFloat("pointLight[0].linear", pointLight.linear);
+    triangleShader.setFloat("pointLight[0].quadratic", pointLight.quadratic);
 
+    triangleShader.setVec3("directionalLight.direction", directionalLight.direction);
+    triangleShader.setVec3("directionalLight.ambient", directionalLight.ambient);
+    triangleShader.setVec3("directionalLight.diffuse", directionalLight.diffuse);
+    triangleShader.setVec3("directionalLight.specular", directionalLight.specular);
 
+    
 
+    float triangleUpLine[] = 
+    {
+        0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f
+    };
+
+    unsigned int upVAO, upVBO;
+    glGenVertexArrays(1, &upVAO);
+    glBindVertexArray(upVAO);
+
+    glGenBuffers(1, &upVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, upVAO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(triangleUpLine), triangleUpLine, GL_DYNAMIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*) 0);
+    glEnableVertexAttribArray(0);
+
+    Shader debugShader("./Shaders/DebugLine.vert", "./Shaders/DebugLine.frag");
+    mat4 debugLineModel = mat4(1.0);
+    debugLineModel = glm::translate(debugLineModel, vec3(0.0f, 0.5f, 0.0f));
+
+    debugShader.use();
+    debugShader.setVec3("u_color", vec3(1.0f, 0.0f, 0.0f));
     
 
 
@@ -609,9 +675,6 @@ int main(int argc, char* argv[])
             deltaTime = calculateDeltaTime(lastFrame, currentFrame);
             processInput(window, deltaTime);
 
-            proj = glm::perspective(glm::radians(camera.fov), (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
-            view = camera.getViewMatrix();               
-
             //model = glm::rotate(model, glm::radians(10.0f) * deltaTime, vec3(0.0f, 1.0f, 0.0f));
             // UPDATE
                 //model = glm::mat4(1.0f);
@@ -622,10 +685,39 @@ int main(int argc, char* argv[])
                 const float radius = 5.f;
                 lightModel = mat4(1.0f);
                 //lightPosition = vec3(sin(glfwGetTime()) * radius, sin(glfwGetTime()) * 5.0f, cos(glfwGetTime()) * radius);
-                lightModel = glm::translate(lightModel, light.position);
+                lightModel = glm::translate(lightModel, pointLight.position);
+                
+                triangleModel = mat4(1.0f);
+
+                triangleFront = glm::normalize(
+                    vec3(
+                        cos(glm::radians(triangleRotation.y)) * cos(glm::radians(triangleRotation.x)) * cos(glm::radians(triangleRotation.z)),
+                        sin(glm::radians(triangleRotation.x)) * sin(glm::radians(triangleRotation.z)),
+                        sin(glm::radians(triangleRotation.y)) * cos(glm::radians(triangleRotation.x))
+                    )
+                );
+
+                triangleRight = glm::normalize(glm::cross(triangleFront, worldUp));
+                triangleUp = glm::normalize(glm::cross(triangleRight, triangleFront));
+
+                triangleModel = glm::translate(triangleModel, trianglePosition);
+                //triangleModel = glm::scale(triangleModel, triangleFront * triangleScale.z);
+                //triangleModel = glm::scale(triangleModel, triangleRight * triangleScale.x);
+                //triangleModel = glm::scale(triangleModel, triangleUp * triangleScale.y);
+
+
+                triangleModel = glm::rotate(triangleModel, glm::radians(triangleRotation.x), worldRight);
+                triangleModel = glm::rotate(triangleModel, glm::radians(triangleRotation.y), worldUp);
+                triangleModel = glm::rotate(triangleModel, glm::radians(triangleRotation.z), worldFront);
+
+
+
+                //triangleModel = glm::rotate(triangleModel, glm::radians(triangleRotation.x), vec3(1.0f, 0.0f, 0.0f));
+            
                 
 
-
+            proj = glm::perspective(glm::radians(camera.fov), (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+            view = camera.getViewMatrix();               
 
 
             // END
@@ -641,28 +733,38 @@ int main(int argc, char* argv[])
             triangleShader.setVec3("material.specular", material.specular);
             triangleShader.setFloat("material.shininess", material.shininess);
 
-            triangleShader.setVec3("light.position", light.position);
-            triangleShader.setVec3("light.ambient",  light.ambient);
-            triangleShader.setVec3("light.diffuse",  light.diffuse); // darken diffuse light a bit
-            triangleShader.setVec3("light.specular", light.specular); 
-            triangleShader.setFloat("light.constant", light.constant);
-            triangleShader.setFloat("light.linear", light.linear);
-            triangleShader.setFloat("light.quadratic", light.quadratic);
+            triangleShader.setVec3("pointLight[0].position", pointLight.position);
+            triangleShader.setVec3("pointLight[0].ambient",  pointLight.ambient);
+            triangleShader.setVec3("pointLight[0].diffuse",  pointLight.diffuse); // darken diffuse light a bit
+            triangleShader.setVec3("pointLight[0].specular", pointLight.specular); 
+            triangleShader.setFloat("pointLight[0].constant", pointLight.constant);
+            triangleShader.setFloat("pointLight[0].linear", pointLight.linear);
+            triangleShader.setFloat("pointLight[0].quadratic", pointLight.quadratic);
+
+            triangleShader.setVec3("directionalLight.direction", directionalLight.direction);
+            triangleShader.setVec3("directionalLight.ambient", directionalLight.ambient);
+            triangleShader.setVec3("directionalLight.diffuse", directionalLight.diffuse);
+            triangleShader.setVec3("directionalLight.specular", directionalLight.specular);
 
 
             lightShader.use();
             lightShader.setMat4("u_projection", proj);
             lightShader.setMat4("u_view", view);
             lightShader.setMat4("u_model", lightModel);
-            lightShader.setVec3("u_lightColor", light.diffuse);
+            lightShader.setVec3("u_lightColor", pointLight.diffuse);
 
-
+            debugShader.use();
+            debugShader.setMat4("u_proj", proj);
+            debugShader.setMat4("u_view", view);
+            debugShader.setMat4("u_model", debugLineModel);
 
 
 
             renderTriangle(triangleShader, VAO, VBO, EBO, texture1, texture2);
 
             renderLight(lightShader, lightVAO, lightVBO);
+
+            renderDebugLines(debugShader, upVAO, upVBO);
 
             // IMGUI RENDERING
             {
@@ -677,16 +779,37 @@ int main(int argc, char* argv[])
             }
 
             {
-                ImGui::Begin("Light Properties");
+                ImGui::Begin("Point Light Properties");
 
-                ImGui::Text("Light");
-                ImGui::SliderFloat3("Position", (float*)&light.position, -10.0f, 10.f);
-                ImGui::ColorEdit3("Ambient", (float*)&light.ambient);
-                ImGui::ColorEdit3("Diffuse", (float*)&light.diffuse);
-                ImGui::ColorEdit3("Specular", (float*)&light.specular);
-                ImGui::SliderFloat("Constant", (float*)&light.constant, 0.f, 10.f);
-                ImGui::SliderFloat("Linear", (float*)&light.linear, 0.f, 1.f);
-                ImGui::SliderFloat("Quadratic", (float*)&light.quadratic, 0.f, 1.f);
+                ImGui::Text("Point Light");
+                ImGui::SliderFloat3("Position", (float*)&pointLight.position, -10.0f, 10.f);
+                ImGui::ColorEdit3("Ambient", (float*)&pointLight.ambient);
+                ImGui::ColorEdit3("Diffuse", (float*)&pointLight.diffuse);
+                ImGui::ColorEdit3("Specular", (float*)&pointLight.specular);
+                ImGui::SliderFloat("Constant", (float*)&pointLight.constant, 0.f, 10.f);
+                ImGui::SliderFloat("Linear", (float*)&pointLight.linear, 0.f, 1.f);
+                ImGui::SliderFloat("Quadratic", (float*)&pointLight.quadratic, 0.f, 1.f);
+
+
+                ImGui::End();
+            }
+            {
+                ImGui::Begin("Directional Light Properties");
+
+                ImGui::Text("Directional Light");
+                ImGui::SliderFloat3("Direction", (float*)&directionalLight.direction, 1.f, -1.f);
+                ImGui::ColorEdit3("Ambient", (float*)&directionalLight.ambient);
+                ImGui::ColorEdit3("Diffuse", (float*)&directionalLight.diffuse);
+                ImGui::ColorEdit3("Specular", (float*)&directionalLight.specular);
+
+                ImGui::End();
+            }
+            {
+                ImGui::Begin("Floor Model");
+                ImGui::SliderFloat3("Position", (float*)&trianglePosition, -10, 10);
+                ImGui::SliderFloat3("Rotation", (float*)&triangleRotation, 0, 360);
+                ImGui::SliderFloat3("Scale", (float*)&triangleScale, 0.001, 10);
+
 
                 ImGui::End();
             }

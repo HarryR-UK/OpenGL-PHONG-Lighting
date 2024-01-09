@@ -21,7 +21,7 @@ struct Material
     float shininess;
 };
 
-struct Light
+struct PointLight
 {
     vec3 position;
     
@@ -34,9 +34,87 @@ struct Light
     float quadratic;
 };
 
+struct DirectionalLight
+{
+    vec3 direction;
+
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+};
+
+struct SpotLight
+{
+    vec3 position;
+    vec3 direciton;
+    float cutOff;
+};
+
+#define NR_POINT_LIGHTS 1
+#define NR_SPOT_LIGHTS 1
 
 uniform Material material;
-uniform Light light;
+uniform PointLight pointLight[NR_POINT_LIGHTS];
+uniform DirectionalLight directionalLight;
+
+vec3 calcPointLights(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
+{
+    vec3 lightDir = normalize(light.position - fragPos);
+    
+    vec3 ambient = light.ambient *  material.diffuse;
+    // nect we calculate the diffuse impact of the light
+    // on the current fragment by taking the dot product
+    // between the norm and lightDir vectors
+    // the result is then multilied by the lights colors
+    // which gets the diffuse component, resulting in a darker diffuse component
+
+    // max prevents a negative number
+    float diff = max(dot(normal, lightDir), 0.0);
+    vec3 diffuse = (diff * material.diffuse) * light.diffuse;
+
+    vec3 reflectDir = reflect(-lightDir, normal);
+
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+    vec3 specular = (material.specular * spec) * light.specular;  
+
+
+    // point light specific
+    float distance = length(light.position - fragPos);
+    float attenuation = 1.0 / (light.constant + light.linear * distance + 
+    light.quadratic * (distance * distance));
+
+    ambient *= attenuation;
+    diffuse *= attenuation;
+    specular *= attenuation;
+    
+    return (ambient + diffuse + specular);
+}
+
+vec3 calcDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir)
+{
+    vec3 lightDir = normalize(-light.direction);
+
+    vec3 ambient = light.ambient *  material.diffuse;
+    // nect we calculate the diffuse impact of the light
+    // on the current fragment by taking the dot product
+    // between the norm and lightDir vectors
+    // the result is then multilied by the lights colors
+    // which gets the diffuse component, resulting in a darker diffuse component
+
+    // max prevents a negative number
+    float diff = max(dot(normal, lightDir), 0.0);
+    vec3 diffuse = (diff * material.diffuse) * light.diffuse;
+
+    vec3 reflectDir = reflect(-lightDir, normal);
+
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+    vec3 specular = (material.specular * spec) * light.specular;  
+
+
+    // point light specific
+
+    return (ambient + diffuse + specular);
+}
 
 
 void main()
@@ -45,7 +123,6 @@ void main()
     //FragColor = texture(texture2, TexCoord);// * vec4(ourColor, 1.0f);
 
 
-    vec3 ambient = light.ambient * material.ambient;
 
 
     // calculates the direction vector between the light source
@@ -55,36 +132,13 @@ void main()
     // the magnitide, and only the angle. This means
     // we try to keep all vectors as unit vectors
     vec3 norm = normalize(Normal);
-    vec3 lightDir = normalize(light.position - FragPos);
-    
-    // nect we calculate the diffuse impact of the light
-    // on the current fragment by taking the dot product
-    // between the norm and lightDir vectors
-    // the result is then multilied by the lights colors
-    // which gets the diffuse component, resulting in a darker diffuse component
-
-    // max prevents a negative number
-    float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = (diff * material.diffuse) * light.diffuse;
-
-
     vec3 viewDir = normalize(viewPos - FragPos);
-    vec3 reflectDir = reflect(-lightDir, norm);
+    vec3 result = calcDirectionalLight(directionalLight, norm, viewDir);
+    for(int i = 0; i < NR_POINT_LIGHTS; ++i)
+    {
+        result += calcPointLights(pointLight[i], norm, FragPos, viewDir);
+    }
 
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-    vec3 specular = (material.specular * spec) * light.specular;  
-
-
-    // point light specific
-    float distance = length(light.position - FragPos);
-    float attenuation = 1.0 / (light.constant + light.linear * distance + 
-    light.quadratic * (distance * distance));
-
-    ambient *= attenuation;
-    diffuse *= attenuation;
-    specular *= attenuation;
-
-    vec3 result = ambient + diffuse + specular;
 
     FragColor = vec4(result, 1.0);
 
