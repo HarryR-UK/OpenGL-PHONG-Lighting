@@ -97,6 +97,7 @@ class Camera
 
         void processKeyboardInput(CameraMovement direction, float deltaTime)
         {
+            vec3 moveDir = vec3(0.0f);
             float speed = moveSpeed * deltaTime;
             if(isSprinting) 
                 speed *= sprintSpeed;
@@ -104,27 +105,35 @@ class Camera
             switch (direction)
             {
                 case FORWARD:
-                    position += forwards * speed;
+                    moveDir += forwards;
+                    //position += forwards * speed;
                     break;
                 case BACKWARD:
-                    position -= forwards * speed;
+                    moveDir -= forwards;
+                    //position -= forwards * speed;
                     break;
                 case LEFT:
-                    position -= right * speed;
+                    moveDir -= right;
+                    //position -= right * speed;
                     break;
                 case RIGHT:
-                    position += right * speed;
+                    moveDir += right;
+                    //position += right * speed;
                     break;
                 case UP:
-                    position += worldUp * speed;
+                    moveDir += worldUp;
+                    //position += worldUp * speed;
                     break;
                 case DOWN:
-                    position -= worldUp * speed;
+                    moveDir -= worldUp;
+                    //position -= worldUp * speed;
                     break;
                 default:
                     break;
 
             }
+            position += glm::normalize(moveDir) * speed;
+
         }
 
         void processMouseMovement(float xOffset, float yOffset)
@@ -147,3 +156,4 @@ class Camera
 
 
 #endif // !CAMERA_H
+

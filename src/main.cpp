@@ -8,12 +8,14 @@
 #include<glm/gtc/matrix_transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
 
+#include<assimp/Importer.hpp>
+
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw_gl3.h"
 
 #include "Shader.h"
 #include "Camera.h"
-
+//https://hodapp87.github.io/cs6460_project/#02_2D_Coordinates.html
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
@@ -765,7 +767,7 @@ int main(int argc, char* argv[])
 
             renderLight(lightShader, lightVAO, lightVBO);
 
-            //renderDebugLines(debugShader, upVAO, upVBO);
+            renderDebugLines(debugShader, upVAO, upVBO);
 
             // IMGUI RENDERING
             {
