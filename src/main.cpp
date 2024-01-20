@@ -16,8 +16,7 @@
 #include "Shader.h"
 #include "Camera.h"
 //https://hodapp87.github.io/cs6460_project/#02_2D_Coordinates.html
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "Model.h"
 
 #define WINDOW_WIDTH 1800
 #define WINDOW_HEIGHT 1050
@@ -366,7 +365,6 @@ int main(int argc, char* argv[])
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    stbi_set_flip_vertically_on_load(true);
 
 /*
     unsigned char* data2 = stbi_load("/Users/testTheOne/OpenGLProjects/test1/Resources/Images/amoogus.png", &width, &height, &nrChannels, 0);
@@ -381,7 +379,6 @@ int main(int argc, char* argv[])
 
     stbi_image_free(data2);
 */
-    stbi_set_flip_vertically_on_load(false);
 
     triangleShader.use();
     triangleShader.setInt("texture1", 0);
@@ -656,6 +653,9 @@ int main(int argc, char* argv[])
     debugShader.setVec3("u_color", vec3(1.0f, 0.0f, 0.0f));
     
 
+    Shader textureShader("./Shaders/Lighting_Texture.vert", "./Shaders/Lighting_Texture.frag");
+    Model backpackModel("./Resources/Models/Cube/cube.obj");
+
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -761,13 +761,39 @@ int main(int argc, char* argv[])
             debugShader.setMat4("u_view", view);
             debugShader.setMat4("u_model", debugLineModel);
 
+            glm::mat4 backpackModelMatrix = glm::mat4(1.0f);
 
 
-            renderTriangle(triangleShader, VAO, VBO, EBO, texture1, texture2);
+            textureShader.use();
+            textureShader.setMat4("model", backpackModelMatrix);
+            textureShader.setMat4("view", view);
+            textureShader.setMat4("proj", proj);    
+            textureShader.setVec3("viewPos", camera.position);
+
+            triangleShader.setFloat("material.shininess", material.shininess);
+
+            textureShader.setVec3("pointLight[0].position", pointLight.position);
+            textureShader.setVec3("pointLight[0].ambient",  pointLight.ambient);
+            textureShader.setVec3("pointLight[0].diffuse",  pointLight.diffuse); // darken diffuse light a bit
+            textureShader.setVec3("pointLight[0].specular", pointLight.specular); 
+            textureShader.setFloat("pointLight[0].constant", pointLight.constant);
+            textureShader.setFloat("pointLight[0].linear", pointLight.linear);
+            textureShader.setFloat("pointLight[0].quadratic", pointLight.quadratic);
+
+            textureShader.setVec3("directionalLight.direction", directionalLight.direction);
+            textureShader.setVec3("directionalLight.ambient", directionalLight.ambient);
+            textureShader.setVec3("directionalLight.diffuse", directionalLight.diffuse);
+            textureShader.setVec3("directionalLight.specular", directionalLight.specular);
+
+
+
+            backpackModel.Draw(textureShader);
+
+            //renderTriangle(triangleShader, VAO, VBO, EBO, texture1, texture2);
 
             renderLight(lightShader, lightVAO, lightVBO);
 
-            renderDebugLines(debugShader, upVAO, upVBO);
+            //renderDebugLines(debugShader, upVAO, upVBO);
 
             // IMGUI RENDERING
             {
