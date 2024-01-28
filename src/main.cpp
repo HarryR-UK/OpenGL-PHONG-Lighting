@@ -569,7 +569,7 @@ int main(int argc, char* argv[])
 
     PointLight pointLight;
 
-    pointLight.ambient = vec3(0.4f, 0.4f, 0.4f);
+    pointLight.ambient = vec3(0.0f);
     pointLight.diffuse = vec3(0.75f, 0.75f, 0.75f);
     pointLight.specular = vec3(1.0f);
     pointLight.constant = 1.0f;
@@ -585,8 +585,8 @@ int main(int argc, char* argv[])
 
     DirectionalLight directionalLight;
     directionalLight.direction = vec3(-0.2f, -1.0f, -0.3f);
-    directionalLight.ambient = vec3(0.2f, 0.2f, 0.2f);
-    directionalLight.diffuse = vec3(1.f, 0.93f, 0.83f);
+    directionalLight.ambient = vec3(0.3f, 0.3f, 0.3f);
+    directionalLight.diffuse = vec3(0.75f, 0.75f, 0.75f);
     directionalLight.specular = vec3(0.5f, 0.5f, 0.5f);
 
     mat4 lightModel = mat4(1.0f);
@@ -654,8 +654,13 @@ int main(int argc, char* argv[])
     
 
     Shader textureShader("./Shaders/Lighting_Texture.vert", "./Shaders/Lighting_Texture.frag");
-    Model backpackModel("./Resources/Models/Cube/cube.obj");
+    Model backpackModel("./Resources/Models/Monkey/monkey.obj");
 
+    glm::mat4 backpackModelMatrix = glm::mat4(1.0f);
+    vec3 backpackPosition = vec3(0.0f);
+    vec3 backpackScale = vec3(1.0f);
+    
+    float spinSpeed = 15.f;
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -761,8 +766,11 @@ int main(int argc, char* argv[])
             debugShader.setMat4("u_view", view);
             debugShader.setMat4("u_model", debugLineModel);
 
-            glm::mat4 backpackModelMatrix = glm::mat4(1.0f);
 
+            backpackModelMatrix = mat4(1.0f);
+            // backpackModelMatrix = glm::rotate(backpackModelMatrix, glm::radians((float)glfwGetTime() * 2), vec3(1.0f, 0.0f, 0.0f));
+            backpackModelMatrix = glm::rotate(backpackModelMatrix, glm::radians((float)glfwGetTime() * spinSpeed), vec3(0.0f, 1.0f, 0.0f));
+            // backpackModelMatrix = glm::rotate(backpackModelMatrix, glm::radians((float)glfwGetTime() * 6), vec3(0.0f, 0.0f, 1.0f));
 
             textureShader.use();
             textureShader.setMat4("model", backpackModelMatrix);
@@ -800,7 +808,7 @@ int main(int argc, char* argv[])
                 ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
                 static float f = 0.0f;
                 static int counter = 0;
-                ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+                ImGui::SliderFloat("float", &spinSpeed, 0.0f, 30.0f);
                 ImGui::ColorEdit4("Clear Color: ", (float*)&clearColor);
 
 

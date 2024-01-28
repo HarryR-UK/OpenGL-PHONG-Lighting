@@ -17,3 +17,11 @@ This project is quite unorganised in terms of code style but is not a representa
 >
 
 ![video showcase](./Resources/Images/lightingtest.gif)
+
+>
+
+![Monkey Gif](./Resources/Images/MonkeyLight.gif)
+
+## See a video
+
+![Monkey Vid](./Resources/Images/MonkeyLight.mov)
