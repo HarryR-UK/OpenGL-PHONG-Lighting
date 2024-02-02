@@ -219,8 +219,16 @@ int main(int argc, char* argv[])
     glBlendFunc(GL_SRC0_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_PROGRAM_POINT_SIZE);
     glEnable(GL_LINE_SMOOTH);
+
+    glEnable(GL_STENCIL_TEST);
+
     glLineWidth(5.0f);
 
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    glEnable(GL_STENCIL_TEST);
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
     //glfwSwapInterval(1);
 
 
@@ -654,13 +662,17 @@ int main(int argc, char* argv[])
     
 
     Shader textureShader("./Shaders/Lighting_Texture.vert", "./Shaders/Lighting_Texture.frag");
-    Model backpackModel("./Resources/Models/Monkey/monkey.obj");
+    Shader cellShader("./Shaders/CellShader.vert", "./Shaders/CellShader.frag");
+    Model backpackModel("./Resources/Models/Sphere/don.obj");
 
     glm::mat4 backpackModelMatrix = glm::mat4(1.0f);
     vec3 backpackPosition = vec3(0.0f);
     vec3 backpackScale = vec3(1.0f);
     
     float spinSpeed = 15.f;
+
+
+    Shader lineShader("./Shaders/LineShaderColor.vert", "./Shaders/LineShaderColor.frag");
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -677,6 +689,9 @@ int main(int argc, char* argv[])
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
             ImGui_ImplGlfwGL3_NewFrame();
 
+            glStencilMask(0xFF);
+            glStencilFunc(GL_ALWAYS, 0, 0xFF);
+            glEnable(GL_DEPTH_TEST);
 
             float currentFrame = glfwGetTime();
             deltaTime = calculateDeltaTime(lastFrame, currentFrame);
@@ -728,6 +743,7 @@ int main(int argc, char* argv[])
             view = camera.getViewMatrix();               
 
 
+            // render those without outline
             // END
 
             triangleShader.use();
@@ -766,11 +782,19 @@ int main(int argc, char* argv[])
             debugShader.setMat4("u_view", view);
             debugShader.setMat4("u_model", debugLineModel);
 
+            renderLight(lightShader, lightVAO, lightVBO);
+
+
+
 
             backpackModelMatrix = mat4(1.0f);
             // backpackModelMatrix = glm::rotate(backpackModelMatrix, glm::radians((float)glfwGetTime() * 2), vec3(1.0f, 0.0f, 0.0f));
-            backpackModelMatrix = glm::rotate(backpackModelMatrix, glm::radians((float)glfwGetTime() * spinSpeed), vec3(0.0f, 1.0f, 0.0f));
+            //backpackModelMatrix = glm::rotate(backpackModelMatrix, glm::radians((float)glfwGetTime() * spinSpeed), vec3(0.0f, 1.0f, 0.0f));
             // backpackModelMatrix = glm::rotate(backpackModelMatrix, glm::radians((float)glfwGetTime() * 6), vec3(0.0f, 0.0f, 1.0f));
+
+            glStencilFunc(GL_ALWAYS, 1, 0xFF);
+            glStencilMask(0xFF);
+
 
             textureShader.use();
             textureShader.setMat4("model", backpackModelMatrix);
@@ -793,13 +817,43 @@ int main(int argc, char* argv[])
             textureShader.setVec3("directionalLight.diffuse", directionalLight.diffuse);
             textureShader.setVec3("directionalLight.specular", directionalLight.specular);
 
+            cellShader.use();
+            cellShader.setMat4("model", backpackModelMatrix);
+            cellShader.setMat4("view", view);
+            cellShader.setMat4("proj", proj);
+            cellShader.setVec3("viewPos", camera.position);
+            cellShader.setVec3("lightDir", directionalLight.direction);
+            backpackModel.Draw(cellShader);
 
 
-            backpackModel.Draw(textureShader);
+            glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+            glStencilMask(0x00);
+            glDisable(GL_DEPTH_TEST);
+
+            float lineScale = 1.02f;
+            mat4 lineModel = mat4(1.0f);
+            lineModel = backpackModelMatrix;
+            lineModel = glm::scale(lineModel, vec3(lineScale, lineScale, lineScale));
+
+            lineShader.use();
+            lineShader.setMat4("model", lineModel);
+            lineShader.setMat4("view", view);
+            lineShader.setMat4("proj", proj);
+            backpackModel.Draw(lineShader);
+
+
+            glStencilMask(0xFF);
+            glStencilFunc(GL_ALWAYS, 0, 0xFF);
+            glEnable(GL_DEPTH_TEST);
+
+
+
+
+
+
 
             //renderTriangle(triangleShader, VAO, VBO, EBO, texture1, texture2);
 
-            renderLight(lightShader, lightVAO, lightVBO);
 
             //renderDebugLines(debugShader, upVAO, upVBO);
 
