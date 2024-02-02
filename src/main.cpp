@@ -745,6 +745,8 @@ int main(int argc, char* argv[])
 
             // render those without outline
             // END
+            glStencilFunc(GL_ALWAYS, 1, 0xFF);
+            glStencilMask(0xFF);
 
             triangleShader.use();
             triangleShader.setMat4("model", triangleModel);
@@ -792,8 +794,6 @@ int main(int argc, char* argv[])
             //backpackModelMatrix = glm::rotate(backpackModelMatrix, glm::radians((float)glfwGetTime() * spinSpeed), vec3(0.0f, 1.0f, 0.0f));
             // backpackModelMatrix = glm::rotate(backpackModelMatrix, glm::radians((float)glfwGetTime() * 6), vec3(0.0f, 0.0f, 1.0f));
 
-            glStencilFunc(GL_ALWAYS, 1, 0xFF);
-            glStencilMask(0xFF);
 
 
             textureShader.use();
@@ -822,8 +822,24 @@ int main(int argc, char* argv[])
             cellShader.setMat4("view", view);
             cellShader.setMat4("proj", proj);
             cellShader.setVec3("viewPos", camera.position);
-            cellShader.setVec3("lightDir", directionalLight.direction);
+
+            cellShader.setFloat("material.shininess", material.shininess);
+
+            cellShader.setVec3("pointLight[0].position", pointLight.position);
+            cellShader.setVec3("pointLight[0].ambient",  pointLight.ambient);
+            cellShader.setVec3("pointLight[0].diffuse",  pointLight.diffuse); // darken diffuse light a bit
+            cellShader.setVec3("pointLight[0].specular", pointLight.specular); 
+            cellShader.setFloat("pointLight[0].constant", pointLight.constant);
+            cellShader.setFloat("pointLight[0].linear", pointLight.linear);
+            cellShader.setFloat("pointLight[0].quadratic", pointLight.quadratic);
+
+            cellShader.setVec3("directionalLight.direction", directionalLight.direction);
+            cellShader.setVec3("directionalLight.ambient", directionalLight.ambient);
+            cellShader.setVec3("directionalLight.diffuse", directionalLight.diffuse);
+            cellShader.setVec3("directionalLight.specular", directionalLight.specular);
             backpackModel.Draw(cellShader);
+            
+
 
 
             glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
@@ -873,7 +889,7 @@ int main(int argc, char* argv[])
                 ImGui::Begin("Point Light Properties");
 
                 ImGui::Text("Point Light");
-                ImGui::SliderFloat3("Position", (float*)&pointLight.position, -10.0f, 10.f);
+                ImGui::SliderFloat3("Position", (float*)&pointLight.position, -100.0f, 100.f);
                 ImGui::ColorEdit3("Ambient", (float*)&pointLight.ambient);
                 ImGui::ColorEdit3("Diffuse", (float*)&pointLight.diffuse);
                 ImGui::ColorEdit3("Specular", (float*)&pointLight.specular);
