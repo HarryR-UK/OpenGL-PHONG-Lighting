@@ -22,6 +22,10 @@ This project is quite unorganised in terms of code style but is not a representa
 
 ![Monkey Gif](./Resources/Images/MonkeyLight.gif)
 
+## Toon Shading
+
+![toon shading](./Resources/Images/toonShader.png)
+
 ## See a video
 
 ![Monkey Vid](./Resources/Images/MonkeyLight.mov)

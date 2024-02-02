@@ -593,7 +593,7 @@ int main(int argc, char* argv[])
 
     DirectionalLight directionalLight;
     directionalLight.direction = vec3(-0.2f, -1.0f, -0.3f);
-    directionalLight.ambient = vec3(0.3f, 0.3f, 0.3f);
+    directionalLight.ambient = vec3(0.45f, 0.45f, 0.45f);
     directionalLight.diffuse = vec3(0.75f, 0.75f, 0.75f);
     directionalLight.specular = vec3(0.5f, 0.5f, 0.5f);
 
@@ -663,7 +663,7 @@ int main(int argc, char* argv[])
 
     Shader textureShader("./Shaders/Lighting_Texture.vert", "./Shaders/Lighting_Texture.frag");
     Shader cellShader("./Shaders/CellShader.vert", "./Shaders/CellShader.frag");
-    Model backpackModel("./Resources/Models/Sphere/don.obj");
+    Model backpackModel("./Resources/Models/Sphere/sphere.obj");
 
     glm::mat4 backpackModelMatrix = glm::mat4(1.0f);
     vec3 backpackPosition = vec3(0.0f);
