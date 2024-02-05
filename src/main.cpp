@@ -170,7 +170,7 @@ int main(int argc, char* argv[])
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_SAMPLES, 3);
+    glfwWindowHint(GLFW_SAMPLES, 2);
     glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
 
 
@@ -230,7 +230,11 @@ int main(int argc, char* argv[])
     glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
     //glfwSwapInterval(1);
-
+    
+    // stops rendering faces which are not seen by the user
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     // sets the function associated with each callback of the mouse movement
@@ -795,6 +799,7 @@ int main(int argc, char* argv[])
             // backpackModelMatrix = glm::rotate(backpackModelMatrix, glm::radians((float)glfwGetTime() * 6), vec3(0.0f, 0.0f, 1.0f));
 
 
+            glStencilMask(0xFF);
 
             textureShader.use();
             textureShader.setMat4("model", backpackModelMatrix);
@@ -847,6 +852,8 @@ int main(int argc, char* argv[])
             glDisable(GL_DEPTH_TEST);
 
             float lineScale = 1.02f;
+            float outline = 1.01f;
+
             mat4 lineModel = mat4(1.0f);
             lineModel = backpackModelMatrix;
             lineModel = glm::scale(lineModel, vec3(lineScale, lineScale, lineScale));
@@ -855,6 +862,7 @@ int main(int argc, char* argv[])
             lineShader.setMat4("model", lineModel);
             lineShader.setMat4("view", view);
             lineShader.setMat4("proj", proj);
+            lineShader.setFloat("outlining", outline);
             backpackModel.Draw(lineShader);
 
 
@@ -878,7 +886,7 @@ int main(int argc, char* argv[])
                 ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
                 static float f = 0.0f;
                 static int counter = 0;
-                ImGui::SliderFloat("float", &spinSpeed, 0.0f, 30.0f);
+                ImGui::SliderFloat("float", &outline, 0.0f, 30.0f);
                 ImGui::ColorEdit4("Clear Color: ", (float*)&clearColor);
 
 
@@ -889,7 +897,7 @@ int main(int argc, char* argv[])
                 ImGui::Begin("Point Light Properties");
 
                 ImGui::Text("Point Light");
-                ImGui::SliderFloat3("Position", (float*)&pointLight.position, -100.0f, 100.f);
+                ImGui::SliderFloat3("Position", (float*)&pointLight.position, -50.0f, 50.f);
                 ImGui::ColorEdit3("Ambient", (float*)&pointLight.ambient);
                 ImGui::ColorEdit3("Diffuse", (float*)&pointLight.diffuse);
                 ImGui::ColorEdit3("Specular", (float*)&pointLight.specular);

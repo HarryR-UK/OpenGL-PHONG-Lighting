@@ -70,13 +70,23 @@ vec3 calcPointLights(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
 
     // max prevents a negative number
     float diff = max(dot(normal, lightDir), 0.0);
-    vec3 diffuse = light.diffuse * diff * texture(material.texture_diffuse1, TexCoord).rgb;
+
+    vec3 diffuse = vec3(1.0);
+
+    if(diff > 0.75)
+        diffuse = light.diffuse * diff * texture(material.texture_diffuse1, TexCoord).rgb;
+    else if (diff > 0.5)
+        diffuse = (light.diffuse * diff * texture(material.texture_diffuse1, TexCoord).rgb) * 0.9;
+    else if(diff > 0.15)
+        diffuse = (light.diffuse * diff * texture(material.texture_diffuse1, TexCoord).rgb) * 0.8;
+    else
+        diffuse = (light.diffuse * diff * texture(material.texture_diffuse1, TexCoord).rgb) * 0.75;
 
     vec3 reflectDir = reflect(-lightDir, normal);
 
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-    vec3 specular = light.specular * spec * texture(material.texture_specular1, TexCoord).rgb; 
-
+    //vec3 specular = light.specular * spec * texture(material.texture_specular1, TexCoord).rgb; 
+    vec3 specular = vec3(0.0);
 
     // point light specific
     float distance = length(light.position - fragPos);
@@ -118,6 +128,8 @@ vec3 calcDirectionalLight(DirectionalLight light, vec3 normal, vec3 viewDir)
         diffuse = (light.diffuse * diff * texture(material.texture_diffuse1, TexCoord).rgb) * 0.8;
     else
         diffuse = (light.diffuse * diff * texture(material.texture_diffuse1, TexCoord).rgb) * 0.75;
+    
+    
     /*
     */
 
@@ -164,10 +176,10 @@ void main()
 
 
 
-    //for(int i = 0; i < NR_POINT_LIGHTS; ++i)
-    //{
-        //result += calcPointLights(pointLight[i], norm, FragPos, viewDir);
-    //}
+    for(int i = 0; i < NR_POINT_LIGHTS; ++i)
+    {
+        result += calcPointLights(pointLight[i], norm, FragPos, viewDir);
+    }
 
 
     FragColor = vec4(result, 1.0);

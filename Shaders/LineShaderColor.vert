@@ -7,6 +7,7 @@ layout(location = 2) in vec3 aNormals;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 proj;
+uniform float outlining;
 
 void main()
 {
