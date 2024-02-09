@@ -232,9 +232,11 @@ int main(int argc, char* argv[])
     //glfwSwapInterval(1);
     
     // stops rendering faces which are not seen by the user
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-    glFrontFace(GL_CCW);
+    /*
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+        glFrontFace(GL_CCW);
+    */
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     // sets the function associated with each callback of the mouse movement
@@ -680,6 +682,89 @@ int main(int argc, char* argv[])
 
 
     // framebuffers
+    unsigned int fbo;
+    glGenFramebuffers(1, &fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+    unsigned int textureColorBuffer;
+    glGenTextures(1, &textureColorBuffer);
+    glBindTexture(GL_TEXTURE_2D, textureColorBuffer);
+
+    glTexImage2D(
+        GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH * 0.2, SCR_HEIGHT * 0.2, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL
+    );
+
+    //glViewport(0, 0, SCR_WIDTH * 0.2, SCR_HEIGHT * 0.2);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    
+
+    glFramebufferTexture2D(
+        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorBuffer, 0
+    );
+
+
+    // textures can be used in shaders, which is why we only used the color buffer in a texture, as the stencil and depth buffers do not need to be accessed by the shader
+    // this is why we use a render buffer object for the depth and stencil buffers
+
+    unsigned int rbo;
+    glGenRenderbuffers(1, &rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH * 0.2f, SCR_HEIGHT * 0.2f);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+    // error checking
+
+    unsigned int fboStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if(fboStatus != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "FRAMEBUFFER ERROR: " << fboStatus << '\n';
+
+    
+
+
+    float framebufferVertices[] = 
+    {
+        // POSITIONS     TEX COORDS
+         1.0f, -1.0f,     1.0f, 0.0f,
+        -1.0f, -1.0f,     0.0f, 0.0f,
+        -1.0f, 1.0f,      0.0f, 1.0f,
+
+        1.0f, 1.0f,       1.0f, 1.0f,
+        1.0f,-1.0f,       1.0f, 0.0f,
+        -1.0f, 1.0f,      0.0f, 1.0f
+    };
+
+    // create the mesh of the framebuffer
+    unsigned int frameVAO, frameVBO;
+    glGenVertexArrays(1, &frameVAO);
+    glBindVertexArray(frameVAO);
+
+    glGenBuffers(1, &frameVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, frameVBO);
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(framebufferVertices), &framebufferVertices, GL_STATIC_DRAW);
+    
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*) 0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4*sizeof(float), (void*) (2 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    
+
+    Shader framebufferShader("./Shaders/Framebuffer.vert", "./Shaders/Framebuffer.frag");
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);  
+
+
+    // Cubemaps
+
+
+
+
+
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -691,14 +776,14 @@ int main(int argc, char* argv[])
 
     while(!glfwWindowShouldClose(window))
     {
-
+            glBindFramebuffer(GL_FRAMEBUFFER, fbo);
             glClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
             ImGui_ImplGlfwGL3_NewFrame();
 
+            glEnable(GL_DEPTH_TEST);
             glStencilMask(0xFF);
             glStencilFunc(GL_ALWAYS, 0, 0xFF);
-            glEnable(GL_DEPTH_TEST);
 
             float currentFrame = glfwGetTime();
             deltaTime = calculateDeltaTime(lastFrame, currentFrame);
@@ -875,9 +960,18 @@ int main(int argc, char* argv[])
 
 
 
+            // framebuffer
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            //glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT);
+            glDisable(GL_DEPTH_TEST);
 
-
-
+            framebufferShader.use();
+            framebufferShader.setInt("screenTexture", 0);
+            glBindVertexArray(frameVAO);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, textureColorBuffer);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
 
             //renderTriangle(triangleShader, VAO, VBO, EBO, texture1, texture2);
 
@@ -977,6 +1071,7 @@ int main(int argc, char* argv[])
     glDeleteBuffers(1,&VAO);
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
+    glDeleteFramebuffers(1, &fbo);
 
     glDeleteBuffers(1, &lightVAO);
     glDeleteBuffers(1, &lightVBO);
