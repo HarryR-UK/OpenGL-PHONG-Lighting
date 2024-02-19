@@ -691,7 +691,7 @@ int main(int argc, char* argv[])
     glBindTexture(GL_TEXTURE_2D, textureColorBuffer);
 
     glTexImage2D(
-        GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH * 0.2, SCR_HEIGHT * 0.2, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL
+        GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL
     );
 
     //glViewport(0, 0, SCR_WIDTH * 0.2, SCR_HEIGHT * 0.2);
@@ -713,7 +713,7 @@ int main(int argc, char* argv[])
     unsigned int rbo;
     glGenRenderbuffers(1, &rbo);
     glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH * 0.2f, SCR_HEIGHT * 0.2f);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, SCR_WIDTH, SCR_HEIGHT);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
     // error checking
@@ -760,6 +760,10 @@ int main(int argc, char* argv[])
 
 
     // Cubemaps
+    unsigned int cubemapTextureID;
+    glGenTextures(1, &cubemapTextureID);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTextureID);
+
 
 
 
